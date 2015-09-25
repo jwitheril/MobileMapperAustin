@@ -9,13 +9,11 @@
 #import "ViewController.h"
 #import <MapKit/MapKit.h>
 
-@interface ViewController ()
+@interface ViewController ()<MKMapViewDelegate>
 
 @property (weak, nonatomic) IBOutlet MKMapView *mapView;
 @property MKPointAnnotation *TexasStateCapitalBuildingAnnotation;
-@property MKPointAnnotation *ZilkerParkAnnotation;
-@property MKPointAnnotation *FranklinBarbecueAnnotation;
-@property MKPointAnnotation *UniversityofTexasAnnotation;
+@property CLLocationManager *locationManager;
 @end
 
 @implementation ViewController
@@ -32,31 +30,53 @@
     [self.mapView addAnnotation:self.TexasStateCapitalBuildingAnnotation];
 
 
-    double latitude1 = 30.2660703;
-    double longitude1 = -97.7691348;
+    CLGeocoder *geocoder = [CLGeocoder new];
+    [geocoder geocodeAddressString:@"Zilker Park" completionHandler:^(NSArray *placemarks, NSError *error) {
+        for (CLPlacemark *place in placemarks)
+        {
+            MKPointAnnotation *annotation = [MKPointAnnotation new];
+            annotation.coordinate = place.location.coordinate;
+            annotation.title = place.name;
+            [self.mapView addAnnotation:annotation];
+        }
+    }];
 
-    self.ZilkerParkAnnotation = [MKPointAnnotation new];
-    self.ZilkerParkAnnotation.coordinate = CLLocationCoordinate2DMake(latitude1,longitude1);
-    self.ZilkerParkAnnotation.title = @"Zilker Park";
-    [self.mapView addAnnotation:self.ZilkerParkAnnotation];
-
-
-    double latitude2 = 30.2701188;
-    double longitude2 = -97.7312727;
-
-    self.FranklinBarbecueAnnotation = [MKPointAnnotation new];
-    self.FranklinBarbecueAnnotation.coordinate = CLLocationCoordinate2DMake(latitude2,longitude2);
-    self.FranklinBarbecueAnnotation.title = @"Franklin Barbecue";
-    [self.mapView addAnnotation:self.FranklinBarbecueAnnotation];
-
-
-    double latitude3 = 30.281578;
-    double longitude3 = -97.740217;
-
-    self.UniversityofTexasAnnotation = [MKPointAnnotation new];
-    self.UniversityofTexasAnnotation.coordinate = CLLocationCoordinate2DMake(latitude3,longitude3);
-    self.UniversityofTexasAnnotation.title = @"University of Texas";
-    [self.mapView addAnnotation:self.UniversityofTexasAnnotation];
+    self.locationManager = [CLLocationManager new];
+    [self.locationManager requestWhenInUseAuthorization];
+    self.mapView.showsUserLocation = YES;
 
 }
+
+-(MKAnnotationView *)mapView:(MKMapView *)mapView viewForAnnotation:(id<MKAnnotation>)annotation {
+    if ([annotation isEqual:mapView.userLocation]) {
+        return nil;
+    }
+    MKPinAnnotationView *pin = [[MKPinAnnotationView alloc]initWithAnnotation:annotation reuseIdentifier:nil];
+    pin.canShowCallout = YES;
+    pin.rightCalloutAccessoryView = [UIButton buttonWithType:UIButtonTypeDetailDisclosure];
+    return pin;
+
+}
+
+-(void)mapView:(MKMapView *)mapView annotationView:(MKAnnotationView *)view calloutAccessoryControlTapped:(UIControl *)control {
+    CLLocationCoordinate2D centercoordinate = view.annotation.coordinate;
+
+    MKCoordinateSpan span;
+    span.latitudeDelta = 0.001;
+    span.longitudeDelta = 0.001;
+
+    MKCoordinateRegion region;
+    region.center = centercoordinate;
+    region.span = span;
+
+    [self.mapView setRegion:region animated:YES];
+
+}
+
 @end
+
+
+
+
+
+
